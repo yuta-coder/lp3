@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract BankAccount {
+    // stores ether balance for each user
+    mapping(address => uint256) private balances;
+
+    // Deposit money  (attach some Ether in "Value" box)
+    function deposit() external payable {
+        require(msg.value > 0, "Deposit must be > 0");
+        balances[msg.sender] += msg.value;
+    }
+
+    // Withdraw money (enter amount in wei)
+    function withdraw(uint256 amount) external {
+        require(amount > 0, "Amount must be > 0");
+        require(balances[msg.sender] >= amount, "Insufficient balance");
+        balances[msg.sender] -= amount;
+        (bool sent, ) = payable(msg.sender).call{value: amount}("");
+        require(sent, "Transfer failed");
+    }
+
+    // Show your balance (in wei)
+    function showBalance() external view returns (uint256) {
+        return balances[msg.sender];
+    }
+}
