@@ -1,0 +1,55 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+
+# -------------------------
+# 1. Load Dataset with correct encoding
+# -------------------------
+df = pd.read_csv("sales.csv", encoding='latin1')  # UnicodeDecodeError fix
+print("Dataset loaded successfully!")
+print(df.head())
+
+# 2. Select numeric columns for clustering
+numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
+X = df[numeric_cols]
+
+# 3. Standardize the data
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 4. Elbow Method to determine optimal K for K-Means
+wcss = []
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, random_state=42)
+    kmeans.fit(X_scaled)
+    wcss.append(kmeans.inertia_)
+
+plt.figure(figsize=(8,5))
+plt.plot(range(1, 11), wcss, marker='o')
+plt.title('Elbow Method')
+plt.xlabel('Number of clusters')
+
+# 5. K-Means Clustering
+# -------------------------
+k = 4  # choose based on elbow plot
+kmeans = KMeans(n_clusters=k, random_state=42)
+df['KMeans_Cluster'] = kmeans.fit_predict(X_scaled)
+print("\nK-Means Clustering result:")
+print(df.head())
+
+# 6. Hierarchical Clustering
+linked = linkage(X_scaled, method='ward')
+
+plt.figure(figsize=(10, 7))
+dendrogram(linked, orientation='top', distance_sort='descending', show_leaf_counts=True)
+plt.title('Hierarchical Clustering Dendrogram')
+plt.show()
+
+# Assign clusters (cut dendrogram at k clusters)
+df['Hier_Cluster'] = fcluster(linked, k, criterion='maxclust')
+print("\nHierarchical Clustering result:")
+print(df.head())
+plt.ylabel('WCSS')
+plt.show()
